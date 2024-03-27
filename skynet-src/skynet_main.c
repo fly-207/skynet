@@ -114,45 +114,67 @@ static const char * load_config = "\
 	return result\n\
 ";
 
+/*
+ * 主函数，负责初始化Skynet服务框架，并根据配置文件启动服务。
+ * 参数argc：命令行参数的数量。
+ * 参数argv：命令行参数的值。
+ * 返回值：程序执行的结果，0代表成功，非0代表失败。
+ */
 int
 main(int argc, char *argv[]) {
-	const char * config_file = NULL ;
+	const char * config_file = NULL ; // 配置文件路径初始化为空
+
+	// 检查命令行参数是否提供了配置文件路径
 	if (argc > 1) {
-		config_file = argv[1];
+		config_file = argv[1]; // 从命令行参数中获取配置文件路径
 	} else {
+		// 如果没有提供配置文件路径，打印错误信息并退出
 		fprintf(stderr, "Need a config file. Please read skynet wiki : https://github.com/cloudwu/skynet/wiki/Config\n"
 			"usage: skynet configfilename\n");
 		return 1;
 	}
 
+	// 全局初始化Skynet框架
 	skynet_globalinit();
+	// 初始化环境变量
 	skynet_env_init();
 
+	// 忽略特定信号
 	sigign();
 
+	// 初始化Skynet配置结构体
 	struct skynet_config config;
 
 #ifdef LUA_CACHELIB
-	// init the lock of code cache
+	// 初始化代码缓存锁
 	luaL_initcodecache();
 #endif
 
+	// 创建一个新的Lua状态机
 	struct lua_State *L = luaL_newstate();
-	luaL_openlibs(L);	// link lua lib
+	// 打开Lua标准库
+	luaL_openlibs(L);
 
+	// 加载并编译配置加载函数
 	int err =  luaL_loadbufferx(L, load_config, strlen(load_config), "=[skynet config]", "t");
 	assert(err == LUA_OK);
+	// 将配置文件路径压入Lua栈
 	lua_pushstring(L, config_file);
 
+	// 调用Lua配置加载函数
 	err = lua_pcall(L, 1, 1, 0);
 	if (err) {
+		// 如果执行出错，打印错误信息并退出
 		fprintf(stderr,"%s\n",lua_tostring(L,-1));
 		lua_close(L);
 		return 1;
 	}
+	// 初始化环境变量
 	_init_env(L);
+	// 关闭Lua状态机
 	lua_close(L);
 
+	// 从配置文件中读取各项设置到config结构体中
 	config.thread =  optint("thread",8);
 	config.module_path = optstring("cpath","./cservice/?.so");
 	config.harbor = optint("harbor", 1);
@@ -162,7 +184,9 @@ main(int argc, char *argv[]) {
 	config.logservice = optstring("logservice", "logger");
 	config.profile = optboolean("profile", 1);
 
+	// 启动Skynet服务
 	skynet_start(&config);
+	// 请求Skynet全局退出
 	skynet_globalexit();
 
 	return 0;

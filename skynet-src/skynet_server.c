@@ -121,25 +121,41 @@ drop_message(struct skynet_message *msg, void *ud) {
 	skynet_send(NULL, source, msg->source, PTYPE_ERROR, msg->session, NULL, 0);
 }
 
+/**
+ * 创建一个新的服务上下文。
+ * 
+ * @param name 服务的模块名称。
+ * @param param 传递给服务的初始化参数。
+ * @return 返回创建的服务上下文结构体指针，如果创建失败则返回NULL。
+ */
 struct skynet_context * 
 skynet_context_new(const char * name, const char *param) {
+    // 尝试查询指定名称的模块
 	struct skynet_module * mod = skynet_module_query(name);
 
+    // 如果模块不存在，直接返回NULL
 	if (mod == NULL)
 		return NULL;
 
+    // 创建模块实例
 	void *inst = skynet_module_instance_create(mod);
+    // 如果实例创建失败，返回NULL
 	if (inst == NULL)
 		return NULL;
+	
+    // 分配内存给上下文结构体
 	struct skynet_context * ctx = skynet_malloc(sizeof(*ctx));
+    // 初始化上下文的调用检查
 	CHECKCALLING_INIT(ctx)
 
 	ctx->mod = mod;
 	ctx->instance = inst;
+    // 初始化引用计数
 	ATOM_INIT(&ctx->ref , 2);
 	ctx->cb = NULL;
 	ctx->cb_ud = NULL;
 	ctx->session_id = 0;
+    // 初始化日志文件指针
 	ATOM_INIT(&ctx->logfile, (uintptr_t)NULL);
 
 	ctx->init = false;
@@ -149,31 +165,42 @@ skynet_context_new(const char * name, const char *param) {
 	ctx->cpu_start = 0;
 	ctx->message_count = 0;
 	ctx->profile = G_NODE.profile;
-	// Should set to 0 first to avoid skynet_handle_retireall get an uninitialized handle
+    // 初始化服务句柄为0，避免未初始化的情况
 	ctx->handle = 0;	
 	ctx->handle = skynet_handle_register(ctx);
+    // 创建消息队列，并将其赋值给上下文
 	struct message_queue * queue = ctx->queue = skynet_mq_create(ctx->handle);
-	// init function maybe use ctx->handle, so it must init at last
+    // 确保在最后调用初始化函数，因为初始化函数可能需要使用服务句柄
 	context_inc();
 
+    // 开始进行调用检查
 	CHECKCALLING_BEGIN(ctx)
 	int r = skynet_module_instance_init(mod, inst, ctx, param);
+    // 结束调用检查
 	CHECKCALLING_END(ctx)
+    // 如果初始化函数成功，则进行后续处理
 	if (r == 0) {
 		struct skynet_context * ret = skynet_context_release(ctx);
+        // 如果上下文被成功初始化，则标记为已初始化
 		if (ret) {
 			ctx->init = true;
 		}
+        // 将消息队列加入全局消息队列，以便进行消息处理
 		skynet_globalmq_push(queue);
+        // 如果上下文被成功初始化，则记录日志信息
 		if (ret) {
 			skynet_error(ret, "LAUNCH %s %s", name, param ? param : "");
 		}
 		return ret;
 	} else {
+        // 如果初始化失败，则进行资源释放和错误记录
 		skynet_error(ctx, "FAILED launch %s", name);
+        // 释放上下文资源并从句柄表中移除
 		uint32_t handle = ctx->handle;
 		skynet_context_release(ctx);
+        // 退休服务句柄
 		skynet_handle_retire(handle);
+        // 释放消息队列资源
 		struct drop_t d = { handle };
 		skynet_mq_release(queue, drop_message, &d);
 		return NULL;
