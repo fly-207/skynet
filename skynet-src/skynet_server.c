@@ -39,25 +39,27 @@
 
 #endif
 
+// skynet_context 结构体定义了Skynet服务的一个上下文环境
+// 每个服务在进程中都有一个对应的 skynet_context 对象与之匹配
 struct skynet_context {
-	void * instance;
-	struct skynet_module * mod;
-	void * cb_ud;
-	skynet_cb cb;
-	struct message_queue *queue;
-	ATOM_POINTER logfile;
-	uint64_t cpu_cost;	// in microsec
-	uint64_t cpu_start;	// in microsec
-	char result[32];
-	uint32_t handle;
-	int session_id;
-	ATOM_INT ref;
-	int message_count;
-	bool init;
-	bool endless;
-	bool profile;
+	void * instance; // 服务的实例句柄, 调用 .so 模块中 create 函数创建出来的模块对象引用
+	struct skynet_module * mod; // 对应的服务模块, 即 .so 的抽象, 一个 .so 模块可以创建多个实例对象
+	void * cb_ud; // 回调函数的用户数据
+	skynet_cb cb; // 服务回调函数
+	struct message_queue *queue; // 服务的消息队列
+	ATOM_POINTER logfile; // 日志文件的指针（原子类型）
+	uint64_t cpu_cost; // CPU使用时间，单位：微秒
+	uint64_t cpu_start; // 记录服务启动的CPU时间，单位：微秒
+	char result[32]; // 用于存储服务初始化结果的字符串
+	uint32_t handle; // 服务的句柄, 可以通过服务名找到 handle, 再通过 handle 找到具体的服务对象
+	int session_id; // 会话ID
+	ATOM_INT ref; // 引用计数（原子类型）
+	int message_count; // 消息计数
+	bool init; // 标记服务是否已初始化
+	bool endless; // 标记服务是否为无限循环服务
+	bool profile; // 标记是否开启性能分析
 
-	CHECKCALLING_DECL
+	CHECKCALLING_DECL // 声明用于检查调用的宏
 };
 
 struct skynet_node {
@@ -125,7 +127,7 @@ drop_message(struct skynet_message *msg, void *ud) {
  * 创建一个新的服务上下文。
  * 
  * @param name 服务的模块名称。
- * @param param 传递给服务的初始化参数。
+ * @param param 传递给模块实例函数 init 的初始化参数。
  * @return 返回创建的服务上下文结构体指针，如果创建失败则返回NULL。
  */
 struct skynet_context * 
