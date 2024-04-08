@@ -492,48 +492,60 @@ ltrace(lua_State *L) {
 	return 0;
 }
 
+/**
+ * 初始化并注册 skynet 核心模块到 Lua 环境中。
+ * 
+ * @param L Lua 状态机指针，表示当前的 Lua 环境。
+ * @return 总是返回 1。
+ */
 LUAMOD_API int
 luaopen_skynet_core(lua_State *L) {
-	luaL_checkversion(L);
+    // 检查 Lua 版本
+    luaL_checkversion(L);
 
-	luaL_Reg l[] = {
-		{ "send" , lsend },
-		{ "genid", lgenid },
-		{ "redirect", lredirect },
-		{ "command" , lcommand },
-		{ "intcommand", lintcommand },
-		{ "addresscommand", laddresscommand },
-		{ "error", lerror },
-		{ "harbor", lharbor },
-		{ "callback", lcallback },
-		{ "trace", ltrace },
-		{ NULL, NULL },
-	};
+    // 定义模块主要功能的函数注册表
+    luaL_Reg l[] = {
+        { "send" , lsend }, // 发送消息
+        { "genid", lgenid }, // 生成ID
+        { "redirect", lredirect }, // 重定向消息
+        { "command" , lcommand }, // 发送命令
+        { "intcommand", lintcommand }, // 发送内部命令
+        { "addresscommand", laddresscommand }, // 发送地址命令
+        { "error", lerror }, // 处理错误
+        { "harbor", lharbor }, // 跨越Harbor发送消息
+        { "callback", lcallback }, // 设置回调
+        { "trace", ltrace }, // 跟踪服务
+        { NULL, NULL },
+    };
 
-	// functions without skynet_context
-	luaL_Reg l2[] = {
-		{ "tostring", ltostring },
-		{ "pack", luaseri_pack },
-		{ "unpack", luaseri_unpack },
-		{ "packstring", lpackstring },
-		{ "trash" , ltrash },
-		{ "now", lnow },
-		{ "hpc", lhpc },	// getHPCounter
-		{ NULL, NULL },
-	};
+    // 定义不需要 skynet_context 的辅助函数注册表
+    luaL_Reg l2[] = {
+        { "tostring", ltostring }, // 转换为字符串
+        { "pack", luaseri_pack }, // 序列化打包
+        { "unpack", luaseri_unpack }, // 序列化解包
+        { "packstring", lpackstring }, // 打包字符串
+        { "trash" , ltrash }, // 丢弃对象
+        { "now", lnow }, // 获取当前时间
+        { "hpc", lhpc }, // 获取高精度计数器值
+        { NULL, NULL },
+    };
 
-	lua_createtable(L, 0, sizeof(l)/sizeof(l[0]) + sizeof(l2)/sizeof(l2[0]) -2);
+    // 创建一个新的 Lua 表来存放所有的函数
+    lua_createtable(L, 0, sizeof(l)/sizeof(l[0]) + sizeof(l2)/sizeof(l2[0]) -2);
 
-	lua_getfield(L, LUA_REGISTRYINDEX, "skynet_context");
-	struct skynet_context *ctx = lua_touserdata(L,-1);
-	if (ctx == NULL) {
-		return luaL_error(L, "Init skynet context first");
-	}
+    // 尝试从注册表获取 skynet_context
+    lua_getfield(L, LUA_REGISTRYINDEX, "skynet_context");
+    struct skynet_context *ctx = lua_touserdata(L,-1);
+    if (ctx == NULL) {
+        // 如果 skynet_context 不存在，则报错
+        return luaL_error(L, "Init skynet context first");
+    }
 
+    // 注册主要功能函数到新表中，关联 skynet_context
+    luaL_setfuncs(L,l,1);
 
-	luaL_setfuncs(L,l,1);
+    // 注册辅助函数到新表中，不关联 skynet_context
+    luaL_setfuncs(L,l2,0);
 
-	luaL_setfuncs(L,l2,0);
-
-	return 1;
+    return 1;
 }
