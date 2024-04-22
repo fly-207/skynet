@@ -3,6 +3,8 @@ for word in string.gmatch(..., "%S+") do
 	table.insert(args, word)
 end
 
+print("loader 开始执行", ...)
+
 SERVICE_NAME = args[1]
 
 local main, pattern
@@ -46,5 +48,7 @@ if LUA_PRELOAD then
 end
 
 _G.require = (require "skynet.require").require
+
+AAA = "3A"
 
 main(select(2, table.unpack(args)))

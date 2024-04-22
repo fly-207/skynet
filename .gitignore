@@ -11,3 +11,5 @@
 *.dSYM
 .DS_Store
 .vscode
+.idea/
+.vs/

@@ -426,11 +426,11 @@ static int luaB_cocreate(lua_State *L)
     // 检查第一个参数是否是函数。
     luaL_checktype(L, 1, LUA_TFUNCTION);
     // 创建一个新的协程。
-    NL = lua_newthread(L);
+    L = lua_newthread(L);
     // 将创建函数移动到堆栈顶部。
     lua_pushvalue(L, 1); /* move function to top */
     // 将函数从主状态机移动到新协程。
-    lua_xmove(L, NL, 1); /* move function from L to NL */
+    lua_xmove(L, L, 1); /* move function from L to NL */
     return 1;
 }
 

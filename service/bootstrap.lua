@@ -9,9 +9,13 @@ local skynet = require "skynet.manager"	-- 导入skynet.launch, ...
 skynet.start(function()
 	local standalone = skynet.getenv "standalone" -- 尝试从环境变量获取是否为独立模式
 
+	print("bootstrap 准备启动 launcher");
+
 	-- 启动Skynet服务 launcher
 	local launcher = assert(skynet.launch("snlua","launcher"))
 	skynet.name(".launcher", launcher)
+
+	print("bootstrap 启动完成 launcher");
 
 	-- 获取并处理harbor配置
 	local harbor_id = tonumber(skynet.getenv "harbor" or 0)
