@@ -1002,8 +1002,6 @@ function skynet.dispatch_message(...)
     -- 使用pcall安全地调用raw_dispatch_message函数，并捕获任何错误。
     local succ, err = pcall(raw_dispatch_message, ...)
 
-	print("=========任务分发函数执行返回")
-	
     while true do
         -- 检查fork队列是否为空，若为空，则重置队列，并退出循环。
         if fork_queue.h > fork_queue.t then

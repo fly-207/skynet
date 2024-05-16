@@ -68,7 +68,7 @@ harbor = 0
     start 这是 bootstrap 最后一个环节将启动的 lua 服务, 也就是你定制的 skynet 节点的主程序。
     默认为 main ，即启动 main.lua 这个脚本。这个 lua 服务的路径由下面的 luaservice 指定
 ]]
-start = "test"
+start = "login_server"
 
 --[[
     默认为空。如果需要通过 ltls 模块支持 https ，那么需要设置为 true    

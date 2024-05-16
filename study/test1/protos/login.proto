@@ -1,0 +1,24 @@
+syntax = "proto2";
+
+package login;
+
+message atc
+{
+        optional int32 loginaa = 1;
+        optional int32 loginbb = 2;
+        optional string logincc = 3;
+}
+
+message item
+{
+        optional int32 itemId = 1;
+        optional int32 itemNum = 2;
+}
+
+message msghead
+{
+        optional int32 uid = 1;
+        repeated item items = 2;
+}
+
+// protoc --descriptor_set_out=./protos/login.pb ./protos/login.proto

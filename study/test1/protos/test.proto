@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package test;
+
+message at {
+        optional int32 aa = 1;
+        optional int32 bb = 2;
+        optional string cc = 3;
+}
+
+// protoc --descriptor_set_out=./protos/test.pb ./protos/test.proto
