@@ -100,6 +100,9 @@ _ctrl(struct gate * g, const void * msg, int sz) {
 			break;
 		}
 	}
+	skynet_error(ctx, "[=== c gate] TEXT command=%s\n", command);
+	skynet_error(ctx, "[=== c gate] TEXT tmp=%s\n", tmp);
+
 	if (memcmp(command,"kick",i)==0) {
 		_parm(tmp, sz, i);
 		int uid = strtol(command , NULL, 10);
@@ -135,6 +138,8 @@ _ctrl(struct gate * g, const void * msg, int sz) {
 		_parm(tmp, sz, i);
 		int uid = strtol(command , NULL, 10);
 		int id = hashid_lookup(&g->hash, uid);
+		skynet_error(ctx, "[=== c gate] TEXT start 命令 id=%d tmp=%s\n", id, tmp);
+
 		if (id>=0) {
 			skynet_socket_start(ctx, uid);
 		}
@@ -282,8 +287,12 @@ _cb(struct skynet_context * ctx, void * ud, int type, int session, uint32_t sour
 	switch(type) {
 	case PTYPE_TEXT:
 		_ctrl(g , msg , (int)sz);
+		skynet_error(ctx, "[=== c gate] gate TEXT 消息长度=%d\n", sz);
+
 		break;
 	case PTYPE_CLIENT: {
+		skynet_error(ctx, "[=== c gate] CLIENT 消息 长度=%d\n", sz);
+
 		if (sz <=4 ) {
 			skynet_error(ctx, "Invalid client message from %x",source);
 			break;
@@ -303,6 +312,7 @@ _cb(struct skynet_context * ctx, void * ud, int type, int session, uint32_t sour
 		}
 	}
 	case PTYPE_SOCKET:
+		skynet_error(ctx, "[=== c gate] SOCKET 消息\n");
 		// recv socket message from skynet_socket
 		dispatch_socket_message(g, msg, (int)(sz-sizeof(struct skynet_socket_message)));
 		break;
@@ -349,6 +359,8 @@ gate_init(struct gate *g , struct skynet_context * ctx, char * parm) {
 	char binding[sz];
 	int client_tag = 0;
 	char header;
+	skynet_error(ctx, "[=== c gate] gate 初始化参数=%s\n", parm);
+
 	int n = sscanf(parm, "%c %s %s %d %d", &header, watchdog, binding, &client_tag, &max);
 	if (n<4) {
 		skynet_error(ctx, "Invalid gate parm %s",parm);

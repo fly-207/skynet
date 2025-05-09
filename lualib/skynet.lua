@@ -691,6 +691,9 @@ end
 
 function skynet.send(addr, typename, ...)
 	local p = proto[typename]
+
+	skynet.error("skynet.send", typename, ...)
+
 	return c.send(addr, p.id, 0 , p.pack(...))
 end
 
