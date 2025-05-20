@@ -78,6 +78,10 @@ _parm(char *msg, int sz, int command_sz) {
 static void
 _forward_agent(struct gate * g, int fd, uint32_t agentaddr, uint32_t clientaddr) {
 	int id = hashid_lookup(&g->hash, fd);
+
+	struct skynet_context * ctx = g->ctx;
+	skynet_error(ctx, "[=== c gate] 更改代理 id=%d agentaddr=%d clientaddr=%d", id, agentaddr, clientaddr);
+
 	if (id >=0) {
 		struct connection * agent = &g->conn[id];
 		agent->agent = agentaddr;
@@ -100,8 +104,8 @@ _ctrl(struct gate * g, const void * msg, int sz) {
 			break;
 		}
 	}
-	skynet_error(ctx, "[=== c gate] TEXT command=%s\n", command);
-	skynet_error(ctx, "[=== c gate] TEXT tmp=%s\n", tmp);
+	skynet_error(ctx, "[=== c gate] TEXT command=%s", command);
+	skynet_error(ctx, "[=== c gate] TEXT tmp=%s", tmp);
 
 	if (memcmp(command,"kick",i)==0) {
 		_parm(tmp, sz, i);
@@ -152,7 +156,7 @@ _ctrl(struct gate * g, const void * msg, int sz) {
 		}
 		return;
 	}
-	skynet_error(ctx, "[gate] Unknown command : %s", command);
+	skynet_error(ctx, "[=== c gate] Unknown command : %s", command);
 }
 
 static void
@@ -178,6 +182,9 @@ _forward(struct gate *g, struct connection * c, int size) {
 		// socket error
 		return;
 	}
+
+	skynet_error(ctx, "[=== c gate] 转发socket消息 : fd=%d c->client=%d g->broker=%d c->agent=%d g->watchdog=%d", fd, c->client, g->broker, c->agent, g->watchdog);
+
 	if (g->broker) {
 		void * temp = skynet_malloc(size);
 		databuffer_read(&c->buffer,&g->mp,(char *)temp, size);
@@ -284,14 +291,17 @@ dispatch_socket_message(struct gate *g, const struct skynet_socket_message * mes
 static int
 _cb(struct skynet_context * ctx, void * ud, int type, int session, uint32_t source, const void * msg, size_t sz) {
 	struct gate *g = ud;
+
+	skynet_error(ctx, "[=== c gate] gate 消息类型=%d session=%d source=%d 消息长度=%d", type, session, source, sz);
+
 	switch(type) {
 	case PTYPE_TEXT:
 		_ctrl(g , msg , (int)sz);
-		skynet_error(ctx, "[=== c gate] gate TEXT 消息长度=%d\n", sz);
+		skynet_error(ctx, "[=== c gate] gate TEXT 消息长度=%d", sz);
 
 		break;
 	case PTYPE_CLIENT: {
-		skynet_error(ctx, "[=== c gate] CLIENT 消息 长度=%d\n", sz);
+		skynet_error(ctx, "[=== c gate] CLIENT 消息 长度=%d", sz);
 
 		if (sz <=4 ) {
 			skynet_error(ctx, "Invalid client message from %x",source);
